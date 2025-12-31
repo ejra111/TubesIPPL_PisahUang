@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import SplitBill from "./pages/SplitBill.jsx";
+import Home from "./pages/Home.jsx";
+import History from "./pages/History.jsx";
 import Share from "./pages/Share.jsx";
 import { AuthProvider, useAuth } from "./state/auth.jsx";
 import { ToastProvider } from "./state/toast.jsx";
@@ -26,7 +28,9 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/bills/share/:token" element={<Share />} />
-            <Route path="/" element={<PrivateRoute><SplitBill /></PrivateRoute>} />
+            <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+            <Route path="/split/:id" element={<PrivateRoute><SplitBill /></PrivateRoute>} />
+            <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
           </Routes>
         </BrowserRouter>
       </ModalProvider>

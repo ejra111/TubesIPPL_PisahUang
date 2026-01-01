@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, API_URL } from "../state/auth.jsx";
+import { useModal } from "../state/modal.jsx";
 import logoutIcon from "../assets/logout_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg";
 
 export default function History() {
@@ -9,6 +10,8 @@ export default function History() {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(false);
   const headers = { Authorization: `Bearer ${token}` };
+
+  const modal = useModal();
 
   useEffect(() => {
     const load = async () => {
@@ -26,31 +29,28 @@ export default function History() {
   const deleteBill = async (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log(`[UI] Delete button clicked for bill ${id}`);
 
-    // Confirm dialog removed as requested
-    // if (!window.confirm("Apakah Anda yakin ingin menghapus bill ini secara permanen?")) {
-    //   console.log(`[UI] Deletion cancelled by user`);
-    //   return;
-    // }
+    modal.show({
+      title: 'Hapus Bill?',
+      message: 'Apakah Anda yakin ingin menghapus bill ini secara permanen?',
+      type: 'error', // use error style for destructive action
+      okText: 'Hapus',
+      onOk: async () => {
+        try {
+          const res = await fetch(`${API_URL}/bills/${id}`, { method: "DELETE", headers });
+          const data = await res.json();
 
-    try {
-      console.log(`[UI] Sending DELETE request for ${id}...`);
-      const res = await fetch(`${API_URL}/bills/${id}`, { method: "DELETE", headers });
-      const data = await res.json();
-
-      console.log(`[UI] Response: ${res.status}`, data);
-
-      if (res.ok) {
-        setBills(prev => prev.filter(b => b.id !== id));
-        alert("Bill berhasil dihapus!");
-      } else {
-        alert(`Gagal: ${res.status} - ${data.message || "Gagal menghapus bill"}`);
+          if (res.ok) {
+            setBills(prev => prev.filter(b => b.id !== id));
+            // modal.show({ type: 'success', message: 'Bill berhasil dihapus' }); // Optional: show success
+          } else {
+            modal.show({ type: 'error', message: data.message || "Gagal menghapus bill" });
+          }
+        } catch (err) {
+          modal.show({ type: 'error', message: err.message });
+        }
       }
-    } catch (err) {
-      console.error("[UI] Exception:", err);
-      alert(`Error network/client: ${err.message}`);
-    }
+    });
   };
 
   const idr = v => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v || 0));

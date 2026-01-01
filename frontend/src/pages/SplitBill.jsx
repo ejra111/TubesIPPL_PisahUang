@@ -238,6 +238,8 @@ export default function SplitBill() {
     }
   };
 
+  const [editingItem, setEditingItem] = useState(null);
+
   return (
     <div className="layout">
       <div className="topbar">
@@ -339,7 +341,7 @@ export default function SplitBill() {
                 <div className="muted">Belum ada item. Tambahkan item terlebih dahulu.</div>
               ) : (
                 <div className="split-list">
-                  {items.map(it => <ItemCard key={it.id} item={it} participants={participants} onSave={setSplits} onDelete={deleteItem} onEdit={(payload) => updateItem(it.id, payload)} />)}
+                  {items.map(it => <ItemCard key={it.id} item={it} participants={participants} onSave={setSplits} onDelete={deleteItem} onEdit={() => setEditingItem(it)} />)}
                 </div>
               )}
             </div>
@@ -408,6 +410,20 @@ export default function SplitBill() {
         </div>
       </div>
 
+      {editingItem && (
+        <EditItemModal
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSave={async (id, payload) => {
+            await updateItem(id, payload);
+            setEditingItem(null);
+          }}
+          onDelete={async (id) => {
+            await deleteItem(id);
+            setEditingItem(null);
+          }}
+        />
+      )}
 
     </div>
   );
@@ -421,11 +437,6 @@ function ItemCard({ item, participants, onSave, onDelete, onEdit }) {
   const checkedCount = Object.values(checked).filter(Boolean).length || 1;
   const perPerson = totalPrice / checkedCount;
 
-  const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState(item.name);
-  const [editPrice, setEditPrice] = useState(String(item.price));
-  const [editQty, setEditQty] = useState(String(item.quantity || 1));
-
   const toggle = id => setChecked(c => ({ ...c, [id]: !c[id] }));
 
   const handleSave = () => {
@@ -434,74 +445,16 @@ function ItemCard({ item, participants, onSave, onDelete, onEdit }) {
     onSave(item.id, weights);
   };
 
-  const handleDelete = () => {
-    // if (window.confirm(`Hapus item "${item.name}"?`)) {
-    onDelete(item.id);
-    // }
-  };
-
-  const handleEditSubmit = (e) => {
-    e.preventDefault();
-    const payload = {};
-    if (editName !== item.name) payload.name = editName;
-    const pNum = Number(editPrice);
-    const qNum = Number(editQty);
-    if (!editName) { alert('Nama item harus diisi'); return; }
-    if (isNaN(pNum) || pNum < 1) { alert('Harga harus minimal 1'); return; }
-    if (isNaN(qNum) || qNum < 1) { alert('Qty harus minimal 1'); return; }
-    if (pNum !== Number(item.price)) payload.price = pNum;
-    if (qNum !== Number(item.quantity || 1)) payload.quantity = qNum;
-    if (Object.keys(payload).length === 0) { setEditing(false); return; }
-    onEdit(payload);
-    setEditing(false);
-  };
-
   return (
     <div className="item-card">
       <div className="item-head">
         <div>
-          {editing ? (
-            <form onSubmit={handleEditSubmit} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <input className="input" placeholder="Nama item" value={editName} onChange={e => setEditName(e.target.value)} />
-              <input className="input" placeholder="Harga" type="number" min={1} value={editPrice} onChange={e => setEditPrice(e.target.value)} />
-              <input className="input" placeholder="Qty" type="number" min={1} value={editQty} onChange={e => setEditQty(e.target.value)} />
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button type="submit" className="btn btn-primary">Simpan Perubahan</button>
-                <button className="btn btn-danger" onClick={handleDelete}>Hapus</button>
-                <button className="btn btn-outline" onClick={() => { setEditing(false); setEditName(item.name); setEditPrice(String(item.price)); setEditQty(String(item.quantity || 1)); }}>Batal</button>
-              </div>
-            </form>
-          ) : (
-            <>
-              <div style={{ fontWeight: 600 }}>{item.name}</div>
-              <div className="muted">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(totalPrice)} • Qty {item.quantity}</div>
-              <div className="muted">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(perPerson)} per orang</div>
-            </>
-          )}
+          <div style={{ fontWeight: 600 }}>{item.name}</div>
+          <div className="muted">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(totalPrice)} • Qty {item.quantity}</div>
+          <div className="muted">{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(perPerson)} per orang</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {!editing ? (
-            <button className="btn btn-outline" onClick={() => setEditing(true)}>Edit</button>
-          ) : (
-            <>
-              <button className="btn btn-primary" onClick={() => {
-                const payload = {};
-                if (editName !== item.name) payload.name = editName;
-                const pNum = Number(editPrice);
-                const qNum = Number(editQty);
-                if (!editName) { alert('Nama item harus diisi'); return; }
-                if (isNaN(pNum) || pNum < 1) { alert('Harga harus minimal 1'); return; }
-                if (isNaN(qNum) || qNum < 1) { alert('Qty harus minimal 1'); return; }
-                if (pNum !== Number(item.price)) payload.price = pNum;
-                if (qNum !== Number(item.quantity || 1)) payload.quantity = qNum;
-                if (Object.keys(payload).length === 0) { setEditing(false); return; }
-                onEdit(payload);
-                setEditing(false);
-              }}>Simpan Perubahan</button>
-              <button className="btn btn-danger" onClick={handleDelete}>Hapus</button>
-              <button className="btn btn-outline" onClick={() => { setEditing(false); setEditName(item.name); setEditPrice(String(item.price)); setEditQty(String(item.quantity || 1)); }}>Batal</button>
-            </>
-          )}
+          <button className="btn btn-outline" onClick={onEdit}>Edit</button>
           <button className="btn btn-primary" onClick={handleSave}>Simpan</button>
         </div>
       </div>
@@ -515,6 +468,75 @@ function ItemCard({ item, participants, onSave, onDelete, onEdit }) {
             </label>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function EditItemModal({ item, onClose, onSave, onDelete }) {
+  const [name, setName] = useState(item.name);
+  const [price, setPrice] = useState(item.price);
+  const [qty, setQty] = useState(item.quantity || 1);
+  const modal = useModal();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name) { modal.show({ type: 'error', message: "Nama item harus diisi" }); return; }
+    if (price < 1) { modal.show({ type: 'error', message: "Harga minimal 1" }); return; }
+    if (qty < 1) { modal.show({ type: 'error', message: "Qty minimal 1" }); return; }
+
+    // Only send changes
+    const payload = {};
+    if (name !== item.name) payload.name = name;
+    if (Number(price) !== Number(item.price)) payload.price = Number(price);
+    if (Number(qty) !== Number(item.quantity || 1)) payload.quantity = Number(qty);
+
+    onSave(item.id, payload);
+  };
+
+  const handleDeleteClick = () => {
+    modal.show({
+      title: 'Hapus Item',
+      message: `Hapus item "${item.name}"?`,
+      type: 'error',
+      okText: 'Hapus',
+      onOk: () => onDelete(item.id)
+    });
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, // Lowered slightly so global modal (10000) is on top
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+    }}>
+      <div style={{
+        background: 'white', borderRadius: 20, padding: 24, width: 400, maxWidth: '100%',
+        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+      }}>
+        <h3 style={{ marginTop: 0, marginBottom: 16 }}>Edit Item</h3>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, marginBottom: 4, fontWeight: 500 }}>Nama Item</label>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} style={{ width: '100%' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, marginBottom: 4, fontWeight: 500 }}>Harga</label>
+              <input className="input" type="number" min="1" value={price} onChange={e => setPrice(e.target.value)} style={{ width: '100%' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, marginBottom: 4, fontWeight: 500 }}>Qty</label>
+              <input className="input" type="number" min="1" value={qty} onChange={e => setQty(e.target.value)} style={{ width: '100%' }} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-danger" onClick={handleDeleteClick} style={{ marginRight: 'auto' }}>Hapus Item</button>
+
+            <button type="button" className="btn btn-outline" onClick={onClose}>Batal</button>
+            <button type="submit" className="btn btn-primary">Simpan</button>
+          </div>
+        </form>
       </div>
     </div>
   );

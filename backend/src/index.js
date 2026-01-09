@@ -11,7 +11,9 @@ dotenv.config();
 const app = express();
 
 // Middleware untuk mengizinkan CORS
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['Content-Disposition']
+}));
 
 // Middleware untuk parsing JSON body
 app.use(express.json());
@@ -31,5 +33,5 @@ app.use("/bills", billRoutes);
 const port = process.env.PORT || 4000;
 
 // Jalankan server
-app.listen(port, () => {});
+app.listen(port, () => { });
 

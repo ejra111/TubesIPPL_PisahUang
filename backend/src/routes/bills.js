@@ -291,6 +291,7 @@ router.post("/:id/items/:itemId/splits", authRequired, async (req, res) => {
     await query("INSERT INTO item_splits(item_id,participant_id,weight) VALUES(?,?,?)", [req.params.itemId, Number(participantId), Number(weight)]).catch(() => null);
   }
   const rows = await query("SELECT participant_id,weight FROM item_splits WHERE item_id=?", [req.params.itemId]).catch(() => []);
+  res.json({ splits: rows });
 });
 
 // Endpoint untuk mengatur tip dan tax pada bill (memerlukan autentikasi)
